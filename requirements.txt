@@ -1,0 +1,14 @@
+langgraph==0.2.74
+langchain-openai==0.3.6
+langchain-community==0.3.19
+langchain-chroma==0.2.2
+pdfminer
+pdfminer.six
+nltk==3.9.1
+psycopg2==2.9.10
+concurrent-log-handler==0.9.25
+langgraph-checkpoint-postgres
+psycopg
+psycopg-pool
+uvicorn
+python-dotenv==1.0.1

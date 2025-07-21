@@ -132,11 +132,11 @@ def get_llm(llm_type: str = DEFAULT_LLM_TYPE) -> ChatOpenAI:
 if __name__ == "__main__":
     try:
         # 测试不同类型的LLM初始化
-        llm_openai = get_llm("openai")
-        llm_qwen = get_llm("qwen")
+        # llm_openai = get_llm("openai")
+        # llm_qwen = get_llm("qwen")
         llm_singularity = get_llm("singularity")
 
         # 测试无效类型
-        llm_invalid = get_llm("invalid_type")
+        # llm_invalid = get_llm("invalid_type")
     except LLMInitializationError as e:
         logger.error(f"程序终止: {str(e)}")

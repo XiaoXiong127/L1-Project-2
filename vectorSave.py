@@ -1,11 +1,16 @@
 # 功能说明：将PDF文件进行向量计算并持久化存储到向量数据库（chroma）
 import os
 import logging
+import requests
 from openai import OpenAI
 import chromadb
 import uuid
 from utils import pdfSplitTest_Ch
 from utils import pdfSplitTest_En
+from dotenv import load_dotenv
+
+# 加载.env文件中的环境变量
+load_dotenv()
 
 # 设置日志模版
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -27,6 +32,7 @@ QWen_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 QWen_EMBEDDING_API_KEY = os.getenv("DASHSCOPE_API_KEY")
 QWen_EMBEDDING_MODEL = "text-embedding-v1"
 
+
 # 本地开源大模型 vLLM 方式
 # 本地开源大模型 xinference 方式
 # 本地开源大模型 Ollama 方式,bge-m3为例
@@ -34,9 +40,14 @@ OLLAMA_API_BASE = "http://localhost:11434/v1"
 OLLAMA_EMBEDDING_API_KEY = "ollama"
 OLLAMA_EMBEDDING_MODEL = "bge-m3:latest"
 
+# 硅基流动配置
+SILICONFLOW_API_BASE = "https://api.siliconflow.cn/v1"
+SILICONFLOW_EMBEDDING_API_KEY = os.getenv("SINGULARITY_API_KEY")
+SILICONFLOW_EMBEDDING_MODEL = "BAAI/bge-large-zh-v1.5"
 
-# openai:调用gpt模型, qwen:调用阿里通义千问大模型, oneapi:调用oneapi方案支持的模型, ollama:调用本地开源大模型
-llmType = "qwen"
+
+# openai:调用gpt模型, qwen:调用阿里通义千问大模型, oneapi:调用oneapi方案支持的模型, ollama:调用本地开源大模型, siliconflow:调用硅基流动模型
+llmType = "siliconflow"
 
 # 设置测试文本类型 Chinese 或 English
 TEXT_LANGUAGE = 'Chinese'
@@ -60,6 +71,7 @@ def get_embeddings(texts):
     global OPENAI_API_BASE, OPENAI_EMBEDDING_API_KEY, OPENAI_EMBEDDING_MODEL
     global QWen_API_BASE, QWen_EMBEDDING_API_KEY, QWen_EMBEDDING_MODEL
     global OLLAMA_API_BASE, OLLAMA_EMBEDDING_API_KEY, OLLAMA_EMBEDDING_MODEL
+    global SILICONFLOW_API_BASE, SILICONFLOW_EMBEDDING_API_KEY, SILICONFLOW_EMBEDDING_MODEL
     if llmType == 'oneapi':
         try:
             client = OpenAI(
@@ -90,6 +102,40 @@ def get_embeddings(texts):
             )
             data = client.embeddings.create(input=texts,model=OLLAMA_EMBEDDING_MODEL).data
             return [x.embedding for x in data]
+        except Exception as e:
+            logger.info(f"生成向量时出错: {e}")
+            return []
+    elif llmType == 'siliconflow':
+        try:
+            embeddings = []
+            for text in texts:
+                # 硅基流动API限制输入不能超过512个token，这里简单处理一下
+                # 按照中文一个字约等于一个token，英文一个单词约等于一个token的粗略估计
+                # 限制文本长度不超过400个字符，留出余量
+                if len(text) > 400:
+                    logger.info(f"文本过长，进行截断处理: {len(text)} -> 400")
+                    text = text[:400]
+                
+                payload = {
+                    "model": SILICONFLOW_EMBEDDING_MODEL,
+                    "input": text
+                }
+                headers = {
+                    "Authorization": f"Bearer {SILICONFLOW_EMBEDDING_API_KEY}",
+                    "Content-Type": "application/json"
+                }
+                response = requests.post(f"{SILICONFLOW_API_BASE}/embeddings", json=payload, headers=headers)
+                if response.status_code == 200:
+                    result = response.json()
+                    if 'data' in result and len(result['data']) > 0 and 'embedding' in result['data'][0]:
+                        embeddings.append(result['data'][0]['embedding'])
+                    else:
+                        logger.info(f"硅基流动返回数据格式异常: {result}")
+                        return []
+                else:
+                    logger.info(f"硅基流动API调用失败，状态码: {response.status_code}, 响应: {response.text}")
+                    return []
+            return embeddings
         except Exception as e:
             logger.info(f"生成向量时出错: {e}")
             return []

@@ -38,6 +38,7 @@ from ragAgent import (
     ConnectionPoolError,
     monitor_connection_pool,
 )
+from utils.user_management import create_tables, init_user_management
 
 
 # 设置LangSmith环境变量 进行应用跟踪，实时了解应用中的每一步发生了什么
@@ -181,6 +182,12 @@ async def lifespan(app: FastAPI):
             logger.info("Database connection pool initialized")
             # 记录详细调试日志（DEBUG 级别）
             logger.debug("Database connection pool initialized")
+
+            # 创建用户和会话表
+            init_user_management(db_connection_pool)
+            create_tables()
+            logger.info("User management initialized and tables checked/created.")
+
         except Exception as e:
             # 记录连接池打开失败的错误日志
             logger.error(f"Failed to open connection pool: {e}")

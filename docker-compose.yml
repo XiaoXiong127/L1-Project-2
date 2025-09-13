@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15        # 指定具体版本
+    image: pgvector/pgvector:pg15  # 指定包含pgvector扩展的版本
     container_name: postgres_db
     environment:
       POSTGRES_USER: lianpu
@@ -15,7 +15,7 @@ services:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:             # 健康检查
-      test: ["CMD", "pg_isready", "-U", "nange"]
+      test: ["CMD", "pg_isready", "-U", "lianpu"]
       interval: 10s
       timeout: 5s
       retries: 5

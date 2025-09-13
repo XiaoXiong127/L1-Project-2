@@ -34,8 +34,8 @@ from langchain_core.runnables import RunnableConfig
 # 导入Postgres存储类
 from langgraph.store.postgres import PostgresStore
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-# 导入 psycopg2 的操作异常类，用于捕获数据库连接错误
-from psycopg2 import OperationalError
+# 导入 psycopg 的操作异常类，用于捕获数据库连接错误
+from psycopg import OperationalError
 # 导入Postgres检查点保存类
 from langgraph.checkpoint.postgres import PostgresSaver
 # 导入PostgreSQL连接池类
